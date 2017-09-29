@@ -1,7 +1,7 @@
 import sys
 
 class Edge:
-# The eList are weighted and undirected.
+# The edges are weighted and undirected.
 # This object contains two vList and the distance between them.
 # vList v1, v2 are just strings. Distance is a positive integer.
     def __init__(self, v1, v2, distance):
@@ -21,7 +21,7 @@ class Connections(dict):
         return value
 
 class Graph:
-# The eList of this Graph are weighted and undirected.
+# The edges of this Graph are weighted and undirected.
 # This object contains a list of eList and a list of vList.
 # eList are Edge objects. vList are strings.
     def __init__(self, routes):
