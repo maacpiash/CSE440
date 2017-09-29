@@ -27,7 +27,3 @@ Manchester Birmingham 84
 Birmingham Bristol 85
 Birmingham London 117
 END OF INPUT
-eh
-dfb
-earth
-sdhg

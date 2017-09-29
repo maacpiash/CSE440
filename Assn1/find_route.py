@@ -5,14 +5,18 @@ inputf = sys.argv[1]
 with open(inputf, 'r') as f:
     lines = f.readlines()
 
+# print(len(lines))
+
 routes = []
-count = 0
 
-while str(lines[count]) != str("END OF INPUT"):
-    routes.append(lines[count])
-    print(routes[count])
-    count = count + 1
+for r in lines:
+    if(r == str("END OF INPUT")):
+        break
+    else:
+        routes.append(r)
+    
 
-print(len(routes))
-for p in routes:
-    print(p)
+# print(len(routes))
+
+# for p in routes:
+#     print(p)
