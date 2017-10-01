@@ -1,5 +1,6 @@
 import sys
 from collections import deque
+from heapq import heappush, heappop
 
 INF = 9999999
 
@@ -42,25 +43,30 @@ class Graph:
         self.conns = Connections()
         for e in self.edges:
             self.conns[e.v1][e.v2] = e.distance
+            # Distances between the same pair of nodes in an undirected graph are equal
             self.conns[e.v2][e.v1] = e.distance
-        # Distance between same nodes = 0
+        # Distance from one node to the same node = 0
         for v in self.vertices:
             self.conns[v][v] = 0
-        # Distance between unreachable nodes = infinity!
+        # Distance between nodes unreachable to each other = infinity!
         for v1 in self.vertices:
             for v2 in self.vertices:
                 if str(self.conns[v1][v2]) == "{}":
                     self.conns[v1][v2] = INF
     
-    # *** *** *** Breadth-First Search *** *** ***
+    # *** *** *** Breadth-First Search *** *** *** #
     def BFS(self, startNode):
+        if startNode not in self.vertices:
+            print("Invalid input")
+            return
+        # Input validated
         marked = {}
         for v in self.vertices:
             marked[v] = False
         marked[startNode] = True
         q = deque()
         q.append(startNode)
-        print("Breadth-First Search from " + str(startNode))
+        print("Breadth-First Search from {startNode}")
         while len(q) > 0:
             v = q.popleft()
             print(v)
@@ -70,8 +76,15 @@ class Graph:
                     marked[u] = True
         return
 
-    # *** *** *** Depth-First Search *** *** ***
+    # *** *** *** Depth-First Search *** *** *** #
     def DFS(self, startNode, endNode):
+        if startNode not in self.vertices:
+            print("Invalid input : Initial node is not on map")
+            return
+        if endNode not in self.vertices:
+            print("Invalid input : Final node is not on map")
+            return
+        # Inputs validated
         s = list()
         marked = dict()
         backtrack = dict()
@@ -83,7 +96,6 @@ class Graph:
         if(startNode == endNode):
             print("Same starting and ending vertices")
             return True
-        # print("Depth-First Search from "+ startNode + " to " + endNode + ":")
         while len(s) > 0:
             k = s.pop()
             if(k == endNode):
@@ -110,15 +122,63 @@ class Graph:
         else:
             print("distance: infinity\nroute:\nnone")
         return found
+    
+    # *** *** *** Dijkstra's Algorithm *** *** *** #
+    def Dijkstra(self, node1, node2):
+        # First of all, adjustment for neighboring vertices
+        dis = self.conns[node1][node2]
+        if dis != INF:
+            print("distance: " + str(dis) + " km")
+            print("route:\n" + node1 + " to " + node2 + ": " + str(dis) + "  km")
+            return
+
+        visited = dict()
+        for nodes in self.vertices:
+            visited[nodes] = None
+        prioQ = [(0, node1, None)]
+        tracer = [(0, node1, None)]
+        while len(prioQ) > 0:
+            tempLen, tempNode, tempPre = heappop(prioQ)
+            tracer.append((tempLen, tempNode, tempPre))
+            if(visited[tempNode] == None):
+                visited[tempNode] = tempLen
+                for v in self.vertices:
+                    newLen = self.conns[v][tempNode]
+                    if newLen != INF and visited[v] == None:
+                        heappush(prioQ, (tempLen + newLen, v, tempNode))
+        
+        # Adjustment for unreachable nodes           
+        if str(visited[node2]) == "None":
+            print("distance: infinity\nroute:\nnone")
+            return
+                        
+        stack = []
+        node = node2
+        path = 0
+        while node != node1:
+            for i in tracer:
+                if i[1] == node:
+                    newNode = i[2]
+                    break
+            length = self.conns[node][newNode]
+            stack.append(str(newNode + " to " + node + ", " + str(length) + " km"))
+            path = path + length
+            node = newNode
+        print("distance: " + str(path) + " km")
+        for items in reversed(stack):
+            print(items)
 
 
 """
     ##### The procedure of the program starts here #####
 """
-
-inputf = sys.argv[1]
-node1 = sys.argv[2]
-node2 = sys.argv[3]
+try:
+    inputf = sys.argv[1]
+    node1 = sys.argv[2]
+    node2 = sys.argv[3]
+except:
+    print("INVALID INPUT")
+    sys.exit()
 
 # File I/O
 with open(inputf, 'r') as f:
@@ -128,12 +188,11 @@ routes = []
 # This list of STRINGS will contain all the members of 'lines' upto (and excluding) "END OF INPUT"
 
 for r in lines:
-    if(r == str("END OF INPUT")):
+    if "END OF INPUT" in r:
         break
     else:
         routes.append(r)
 
 graph = Graph(routes)
 
-graph.DFS(node1, node2)
-
+graph.Dijkstra(node1, node2)
