@@ -12,9 +12,7 @@ class Edge:
         self.v1 = v1
         self.v2 = v2
         self.distance = int(distance)
-
-    def printEdge(self):
-        print(self.v1 + " to " + self.v2 + ", " + str(self.distance) + " km")
+        
 
 class Connections(dict):
 # Found this code on Wikipedia (https://en.wikipedia.org/wiki/Autovivification)
@@ -23,6 +21,7 @@ class Connections(dict):
     def __missing__(self, key):
         value = self[key] = type(self)()
         return value
+
 
 class Graph:
 # The edges of this Graph are weighted and undirected.
@@ -56,10 +55,12 @@ class Graph:
     
     # *** *** *** Breadth-First Search *** *** *** #
     def BFS(self, startNode):
+        # Input validation
         if startNode not in self.vertices:
-            print("Invalid input")
+            print("Invalid input : Vertex is not on graph")
             return
-        # Input validated
+        
+        # Data structures initiation
         marked = {}
         for v in self.vertices:
             marked[v] = False
@@ -67,6 +68,8 @@ class Graph:
         q = deque()
         q.append(startNode)
         print("Breadth-First Search from {startNode}")
+
+        # Main process
         while len(q) > 0:
             v = q.popleft()
             print(v)
@@ -78,13 +81,27 @@ class Graph:
 
     # *** *** *** Depth-First Search *** *** *** #
     def DFS(self, startNode, endNode):
+        # Input validation
         if startNode not in self.vertices:
-            print("Invalid input : Initial node is not on map")
+            print("Invalid input : Initial vertex is not on graph")
             return
         if endNode not in self.vertices:
-            print("Invalid input : Final node is not on map")
+            print("Invalid input : Final vertex is not on graph")
             return
-        # Inputs validated
+        
+        # The case of same nodes
+        if(startNode == endNode):
+            print("Same starting and ending vertices")
+            return True
+        
+        # For nodes sharing an edge, that edge is the shortest path
+        dis = self.conns[startNode][endNode]
+        if dis != INF:
+            print("distance: " + str(dis) + " km")
+            print("route:\n" + startNode + " to " + endNode + ": " + str(dis) + "  km")
+            return
+
+        # Data structures initiation
         s = list()
         marked = dict()
         backtrack = dict()
@@ -93,9 +110,8 @@ class Graph:
         s.append(startNode)
         marked[startNode] = True
         found = False
-        if(startNode == endNode):
-            print("Same starting and ending vertices")
-            return True
+
+        # Main process
         while len(s) > 0:
             k = s.pop()
             if(k == endNode):
@@ -106,6 +122,8 @@ class Graph:
                     s.append(i)
                     backtrack.update({i : k})
                     marked[i] = True
+        
+        # Backtracking and printing results
         if(found):
             stack = []
             routelength = 0
@@ -125,18 +143,34 @@ class Graph:
     
     # *** *** *** Dijkstra's Algorithm *** *** *** #
     def Dijkstra(self, node1, node2):
-        # First of all, adjustment for neighboring vertices
+        # Inputs validation
+        if node1 not in self.vertices:
+            print("Invalid input : Initial vertex is not on graph")
+            return
+        if node2 not in self.vertices:
+            print("Invalid input : Final vertex is not on graph")
+            return
+        
+        # The case of same nodes
+        if(node1 == node2):
+            print("Same starting and ending vertices")
+            return True
+        
+        # For nodes sharing an edge, that edge is the shortest path
         dis = self.conns[node1][node2]
         if dis != INF:
             print("distance: " + str(dis) + " km")
             print("route:\n" + node1 + " to " + node2 + ": " + str(dis) + "  km")
             return
-
+        
+        # Data structures initiation
         visited = dict()
         for nodes in self.vertices:
             visited[nodes] = None
         prioQ = [(0, node1, None)]
         tracer = [(0, node1, None)]
+        
+        # Main process
         while len(prioQ) > 0:
             tempLen, tempNode, tempPre = heappop(prioQ)
             tracer.append((tempLen, tempNode, tempPre))
@@ -147,11 +181,12 @@ class Graph:
                     if newLen != INF and visited[v] == None:
                         heappush(prioQ, (tempLen + newLen, v, tempNode))
         
-        # Adjustment for unreachable nodes           
+        # Handling unreachable nodes           
         if str(visited[node2]) == "None":
             print("distance: infinity\nroute:\nnone")
             return
-                        
+        
+        # Backtracking and printing results
         stack = []
         node = node2
         path = 0
@@ -172,6 +207,7 @@ class Graph:
 """
     ##### The procedure of the program starts here #####
 """
+
 try:
     inputf = sys.argv[1]
     node1 = sys.argv[2]
