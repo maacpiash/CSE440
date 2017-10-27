@@ -25,7 +25,7 @@ class Connections(dict):
 
 class Graph:
 # The edges of this Graph are weighted and undirected.
-# This object contains a list of eList and a list of vList.
+# This object contains a list of edges and a list of vertices.
 # Edges are Edge objects. Vertices are strings.
     def __init__(self, routes):
         eList = []
@@ -178,7 +178,7 @@ class Graph:
                 visited[tempNode] = tempLen
                 for v in self.vertices:
                     newLen = self.conns[v][tempNode]
-                    if newLen != INF and visited[v] == None:
+                    if newLen != INF and visited[v] is None:
                         heappush(prioQ, (tempLen + newLen, v, tempNode))
         
         # Handling unreachable nodes           
