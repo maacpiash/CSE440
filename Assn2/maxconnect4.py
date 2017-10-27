@@ -31,13 +31,17 @@ def interactiveGame(currentGame):
 
 def main(argv):
     # Make sure we have enough command-line arguments
-    if len(argv) != 5:
-        print('Four command-line arguments are needed:')
+    print("Arglen = " + str(len(argv)))
+    if len(argv) < 5 or len(argv) > 6:
+        print('Four or five command-line arguments are needed:')
         print('Usage: %s interactive [input_file] [computer-next/human-next] [depth]' % argv[0])
         print('or: %s one-move [input_file] [output_file] [depth]' % argv[0])
         sys.exit(2)
 
     game_mode, inFile = argv[1:3]
+    if len(argv) == 5:
+        
+        depth = argv[4]
 
     if not game_mode == 'interactive' and not game_mode == 'one-move':
         print('%s is an unrecognized game mode' % game_mode)
@@ -55,6 +59,7 @@ def main(argv):
     file_lines = currentGame.gameFile.readlines()
     currentGame.gameBoard = [[int(char) for char in line[0:7]] for line in file_lines[0:-1]]
     currentGame.currentTurn = int(file_lines[-1][0])
+    currentGame.maxDepth = depth
     currentGame.gameFile.close()
 
     print('\nMaxConnect-4 game\n')

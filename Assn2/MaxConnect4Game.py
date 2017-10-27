@@ -8,6 +8,9 @@ from copy import copy
 import random
 import sys
 
+NEGINF = -9999999
+POSINF = 9999999
+
 class maxConnect4Game:
     def __init__(self):
         self.gameBoard = [[0 for i in range(7)] for j in range(6)]
@@ -16,7 +19,70 @@ class maxConnect4Game:
         self.player2Score = 0
         self.pieceCount = 0
         self.gameFile = None
+        self.depth = 0
+        self.maxDepth = 0
         random.seed()
+
+    #################### Start of methods for α-β search ####################
+    def Actions(s):
+        actions = []
+        for column, head in enumerate(s.gameBoard[0]):
+            if head == 0:
+                actions.append(column)
+        return actions
+
+    def AlphaBetaSearch(self):
+        values = []
+        acts = self.Actions()
+        for act in acts:
+            result = self.Result(self, act)
+            values.append(self.MaxValue(self, NEGINF, POSINF))
+        return acts[values.index(max(values))]
+        
+    def MaxValue(self, s, alpha, beta):
+        # This line is the "terminal test"
+        if s.pieceCount == 42 or s.depth == self.maxDepth:
+            return s.Utility(s)
+        v = NEGINF
+        for a in Actions(s):
+            v = max(v, MinValue(self, Result(s, a), alpha, beta))
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+        return v
+            
+    
+    def MinValue(self, s, alpha, beta):
+        # This line is the "terminal test"
+        if s.pieceCount == 42 or s.depth == self.maxDepth:
+            return s.Utility(s)
+        v = POSINF
+        for a in Actions(s):
+            v = min(v, MaxValue(self, Result(s, a), alpha, beta))
+            if v <= alpha:
+                return v
+            beta = min(beta, v)
+        return v
+
+    def Utility(self, s):
+        util = 0
+        if s.currentTurn == 1:
+            util = s.player1Score - s.player2Score
+        else:
+            util = s.player2Score - s.player1Score
+        return util
+
+    def Result(self, s, column):
+        newGame = maxConnect4Game()
+        newGame.depth = s.depth + 1
+        newGame.pieceCount = s.pieceCount
+        newGame.gameBoard = copy.deepcopy(s.gameBoard)
+        newGame.playPiece(newGame, column)
+        newGame.currentTurn = (s.currentTurn % 2) + 1
+        return newGame
+
+    ##################### End of methods for α-β search #####################
+
 
     # Count the number of pieces already played
     def checkPieceCount(self):
@@ -47,10 +113,10 @@ class maxConnect4Game:
                     self.pieceCount += 1
                     return 1
 
-    # The AI section. Currently plays randomly.
+    # The AI section.
     def aiPlay(self):
-        randColumn = random.randrange(0,7)
-        result = self.playPiece(randColumn)
+        column = self.AlphaBetaSearch()
+        result = self.playPiece(column)
         if not result:
             self.aiPlay()
         else:
@@ -62,8 +128,8 @@ class maxConnect4Game:
 
     # Calculate the number of 4-in-a-row each player has
     def countScore(self):
-        self.player1Score = 0;
-        self.player2Score = 0;
+        self.player1Score = 0
+        self.player2Score = 0
 
         # Check horizontally
         for row in self.gameBoard:
