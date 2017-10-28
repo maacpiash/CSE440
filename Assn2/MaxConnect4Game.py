@@ -42,7 +42,7 @@ class maxConnect4Game:
         # This line is the "terminal test"
         if s.pieceCount == 42 or str(s.depth) == str(self.maxDepth):
             return s.Utility(s)
-        print("Max-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
+        # print("Max-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
         v = NEGINF
         for a in self.Actions(s):
             v = max(v, self.MinValue(self.Result(s, a), alpha, beta))
@@ -56,7 +56,7 @@ class maxConnect4Game:
         # This line is the "terminal test"
         if s.pieceCount == 42 or str(s.depth) == str(self.maxDepth):
             return s.Utility(s)
-        print("Min-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
+        # print("Min-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
         v = POSINF
         for a in self.Actions(s):
             v = min(v, self.MaxValue(self.Result(s, a), alpha, beta))
@@ -117,7 +117,8 @@ class maxConnect4Game:
                 if not self.gameBoard[i][column]:
                     self.gameBoard[i][column] = self.currentTurn
                     self.pieceCount += 1
-                    return 1
+                    return True
+        return False
 
     # The AI section.
     def aiPlay(self):

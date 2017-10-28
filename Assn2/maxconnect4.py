@@ -11,22 +11,52 @@ def oneMoveGame(currentGame):
     if currentGame.pieceCount == 42:    # Is the board full already?
         print('BOARD FULL\n\nGame Over!\n')
         sys.exit(0)
-
     currentGame.aiPlay() # Make a move
-
     print('Game state after move:')
     currentGame.printGameBoard()
-
     currentGame.countScore()
     print('Score: Player 1 = %d, Player 2 = %d\n' % (currentGame.player1Score, currentGame.player2Score))
-
     currentGame.printGameBoardToFile()
     currentGame.gameFile.close()
 
 
 def interactiveGame(currentGame):
-    # Fill me in
-    sys.exit('Interactive mode is currently not implemented')
+    while currentGame.pieceCount < 42:
+        if currentGame.currentTurn == 1:
+            human = int(input("Enter number of column (1-7, inclusive): "))
+            if not 0 < human < 8:
+                print("Sorry, invalid column number. Input must be between 1 and 7 inclusive.")
+                continue
+            placement = currentGame.playPiece(human - 1)
+            if not placement:
+                print("Sorry, this column is full. Please try another column between 1 and 7 inclusive.")
+                continue
+            try:
+                currentGame.gameFile = open("human.txt", 'w')
+            except IOError:
+                currentGame.gameFile = open("human.txt", 'w+')
+                print("New file 'human.txt' was created.")
+            except:
+                sys.exit("Error opening 'human.txt' file")
+        else:
+            currentGame.aiPlay()
+            try:
+                currentGame.gameFile = open("computer.txt", 'w')
+            except IOError:
+                currentGame.gameFile = open("computer.txt", 'w+')
+                print("New file 'computer.txt' was created.")
+            except:
+                sys.exit("Error opening 'computer.txt' file")
+        
+        print('\n\nMove no. %d: Player %d, column %d\n' % (currentGame.pieceCount, currentGame.currentTurn, human + 1))
+        currentGame.currentTurn = (currentGame.currentTurn % 2) + 1
+        print("Game state after move: ")
+        currentGame.countScore()
+        print('Score: Player 1 = %d, Player 2 = %d\n' % (currentGame.player1Score, currentGame.player2Score))
+        currentGame.printGameBoardToFile()
+    currentGame.gameFile.close()
+
+
 
 
 def main(argv):
