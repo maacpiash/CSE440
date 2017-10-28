@@ -12,7 +12,7 @@ def oneMoveGame(currentGame):
         print('BOARD FULL\n\nGame Over!\n')
         sys.exit(0)
 
-    currentGame.aiPlay() # Make a move (only random is implemented)
+    currentGame.aiPlay() # Make a move
 
     print('Game state after move:')
     currentGame.printGameBoard()
@@ -40,7 +40,6 @@ def main(argv):
 
     game_mode, inFile = argv[1:3]
     if len(argv) == 5:
-        
         depth = argv[4]
 
     if not game_mode == 'interactive' and not game_mode == 'one-move':

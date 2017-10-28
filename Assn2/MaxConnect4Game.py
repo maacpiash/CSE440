@@ -5,7 +5,7 @@
 # Written to be Python 2.4 compatible for omega
 
 from copy import copy
-import random
+import time
 import sys
 
 NEGINF = -9999999
@@ -21,10 +21,9 @@ class maxConnect4Game:
         self.gameFile = None
         self.depth = 0
         self.maxDepth = 0
-        random.seed()
 
-    #################### Start of methods for α-β search ####################
-    def Actions(s):
+    #################### Methods for α-β search start here ####################
+    def Actions(self, s):
         actions = []
         for column, head in enumerate(s.gameBoard[0]):
             if head == 0:
@@ -33,7 +32,7 @@ class maxConnect4Game:
 
     def AlphaBetaSearch(self):
         values = []
-        acts = self.Actions()
+        acts = self.Actions(self)
         for act in acts:
             result = self.Result(self, act)
             values.append(self.MaxValue(self, NEGINF, POSINF))
@@ -41,11 +40,12 @@ class maxConnect4Game:
         
     def MaxValue(self, s, alpha, beta):
         # This line is the "terminal test"
-        if s.pieceCount == 42 or s.depth == self.maxDepth:
+        if s.pieceCount == 42 or str(s.depth) == str(self.maxDepth):
             return s.Utility(s)
+        print("Max-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
         v = NEGINF
-        for a in Actions(s):
-            v = max(v, MinValue(self, Result(s, a), alpha, beta))
+        for a in self.Actions(s):
+            v = max(v, self.MinValue(self.Result(s, a), alpha, beta))
             if v >= beta:
                 return v
             alpha = max(alpha, v)
@@ -54,11 +54,12 @@ class maxConnect4Game:
     
     def MinValue(self, s, alpha, beta):
         # This line is the "terminal test"
-        if s.pieceCount == 42 or s.depth == self.maxDepth:
+        if s.pieceCount == 42 or str(s.depth) == str(self.maxDepth):
             return s.Utility(s)
+        print("Min-Value: Depth = " + str(s.depth) + ", MaxDepth = " + str(self.maxDepth))
         v = POSINF
-        for a in Actions(s):
-            v = min(v, MaxValue(self, Result(s, a), alpha, beta))
+        for a in self.Actions(s):
+            v = min(v, self.MaxValue(self.Result(s, a), alpha, beta))
             if v <= alpha:
                 return v
             beta = min(beta, v)
@@ -76,12 +77,17 @@ class maxConnect4Game:
         newGame = maxConnect4Game()
         newGame.depth = s.depth + 1
         newGame.pieceCount = s.pieceCount
-        newGame.gameBoard = copy.deepcopy(s.gameBoard)
-        newGame.playPiece(newGame, column)
+        i, j = 0, 0
+        while i <= 7:
+            while j <= 6:
+                newGame.gameBoard[i][j] = s.gameBoard[i][j]
+                j += 1
+            i += 1
+        newGame.playPiece(column)
         newGame.currentTurn = (s.currentTurn % 2) + 1
         return newGame
 
-    ##################### End of methods for α-β search #####################
+    ##################### Methods for α-β search end here #####################
 
 
     # Count the number of pieces already played
@@ -120,7 +126,7 @@ class maxConnect4Game:
         if not result:
             self.aiPlay()
         else:
-            print('\n\nmove %d: Player %d, column %d\n' % (self.pieceCount, self.currentTurn, randColumn+1))
+            print('\n\nmove %d: Player %d, column %d\n' % (self.pieceCount, self.currentTurn, column + 1))
             if self.currentTurn == 1:
                 self.currentTurn = 2
             elif self.currentTurn == 2:
