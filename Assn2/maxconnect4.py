@@ -31,7 +31,7 @@ def interactiveGame(currentGame, whoisnext):
         if currentGame.currentTurn == humanPlayer:
             # Human is to play
             human = int(input("Enter number of column (1-7, inclusive): "))
-            col = human + 1
+            col = human
             if not 0 < human < 8:
                 print("Sorry, invalid column number. Input must be between 1 and 7 inclusive.")
                 continue
@@ -46,6 +46,8 @@ def interactiveGame(currentGame, whoisnext):
                 print("New file 'human.txt' was created.")
             except:
                 sys.exit("Error opening 'human.txt' file")
+            currentGame.printGameBoard()
+            currentGame.printGameBoardToFile()
             currentGame.currentTurn = aiPlayer
         else:
             # AI is to play
@@ -57,9 +59,7 @@ def interactiveGame(currentGame, whoisnext):
                 currentGame.gameFile = open("computer.txt", 'w+')
                 print("New file 'computer.txt' was created.")
             except:
-                sys.exit("Error opening 'computer.txt' file")
-            
-        
+                sys.exit("Error opening 'computer.txt' file")        
         print('\n\nMove no. %d: Player %d, column %d\n' % (currentGame.pieceCount, currentGame.currentTurn, col))
         #currentGame.currentTurn = (currentGame.currentTurn % 2) + 1
         print("Game state after move: ")
