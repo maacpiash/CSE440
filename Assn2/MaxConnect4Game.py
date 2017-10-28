@@ -132,6 +132,7 @@ class maxConnect4Game:
                 self.currentTurn = 2
             elif self.currentTurn == 2:
                 self.currentTurn = 1
+        return column
 
     # Calculate the number of 4-in-a-row each player has
     def countScore(self):

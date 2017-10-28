@@ -20,10 +20,18 @@ def oneMoveGame(currentGame):
     currentGame.gameFile.close()
 
 
-def interactiveGame(currentGame):
+def interactiveGame(currentGame, whoisnext):
+    humanPlayer, aiPlayer, col = 0, 0, 0
+    if whoisnext == 'human-next':
+        humanPlayer, aiPlayer = currentGame.currentTurn, (currentGame.currentTurn % 2) + 1
+    else:
+        aiPlayer, humanPlayer = currentGame.currentTurn, (currentGame.currentTurn % 2) + 1
+        
     while currentGame.pieceCount < 42:
-        if currentGame.currentTurn == 1:
+        if currentGame.currentTurn == humanPlayer:
+            # Human is to play
             human = int(input("Enter number of column (1-7, inclusive): "))
+            col = human + 1
             if not 0 < human < 8:
                 print("Sorry, invalid column number. Input must be between 1 and 7 inclusive.")
                 continue
@@ -38,8 +46,11 @@ def interactiveGame(currentGame):
                 print("New file 'human.txt' was created.")
             except:
                 sys.exit("Error opening 'human.txt' file")
+            currentGame.currentTurn = aiPlayer
         else:
-            currentGame.aiPlay()
+            # AI is to play
+            col = currentGame.aiPlay()
+            currentGame.currentTurn = humanPlayer
             try:
                 currentGame.gameFile = open("computer.txt", 'w')
             except IOError:
@@ -47,21 +58,26 @@ def interactiveGame(currentGame):
                 print("New file 'computer.txt' was created.")
             except:
                 sys.exit("Error opening 'computer.txt' file")
+            
         
-        print('\n\nMove no. %d: Player %d, column %d\n' % (currentGame.pieceCount, currentGame.currentTurn, human + 1))
-        currentGame.currentTurn = (currentGame.currentTurn % 2) + 1
+        print('\n\nMove no. %d: Player %d, column %d\n' % (currentGame.pieceCount, currentGame.currentTurn, col))
+        #currentGame.currentTurn = (currentGame.currentTurn % 2) + 1
         print("Game state after move: ")
         currentGame.countScore()
         print('Score: Player 1 = %d, Player 2 = %d\n' % (currentGame.player1Score, currentGame.player2Score))
+        currentGame.printGameBoard()
         currentGame.printGameBoardToFile()
     currentGame.gameFile.close()
 
 
 
 
-def main(argv):
+def main(argv):    
+    # for i, arg in enumerate(argv):
+    #     print("Arg[" + str(i) + "] = " + str(arg))
+    # sys.exit(0)
+
     # Make sure we have enough command-line arguments
-    print("Arglen = " + str(len(argv)))
     if len(argv) < 5 or len(argv) > 6:
         print('Four or five command-line arguments are needed:')
         print('Usage: %s interactive [input_file] [computer-next/human-next] [depth]' % argv[0])
@@ -101,7 +117,7 @@ def main(argv):
     print('Score: Player 1 = %d, Player 2 = %d\n' % (currentGame.player1Score, currentGame.player2Score))
 
     if game_mode == 'interactive':
-        interactiveGame(currentGame) # Be sure to pass whatever else you need from the command line
+        interactiveGame(currentGame, sys.argv[3]) # Be sure to pass whatever else you need from the command line
     else: # game_mode == 'one-move'
         # Set up the output file
         outFile = argv[3]
