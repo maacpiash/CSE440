@@ -4,8 +4,6 @@
 # code provided by Vassilis Athitsos
 # Written to be Python 2.4 compatible for omega
 
-from copy import copy
-import time
 import sys
 
 NEGINF = -9999999
@@ -23,6 +21,7 @@ class maxConnect4Game:
         self.maxDepth = 0
 
     #################### Methods for α-β search start here ####################
+    
     def Actions(self, s):
         actions = []
         for column, head in enumerate(s.gameBoard[0]):
@@ -35,7 +34,7 @@ class maxConnect4Game:
         acts = self.Actions(self)
         for act in acts:
             result = self.Result(self, act)
-            values.append(self.MaxValue(self, NEGINF, POSINF))
+            values.append(self.MinValue(self, NEGINF, POSINF))
         return acts[values.index(max(values))]
         
     def MaxValue(self, s, alpha, beta):
@@ -127,12 +126,12 @@ class maxConnect4Game:
         if not result:
             self.aiPlay()
         else:
-            print('\n\nmove %d: Player %d, column %d\n' % (self.pieceCount, self.currentTurn, column + 1))
+            print('\n\nMove %d: Player %d, column %d\n' % (self.pieceCount, self.currentTurn, column + 1))
             if self.currentTurn == 1:
                 self.currentTurn = 2
             elif self.currentTurn == 2:
                 self.currentTurn = 1
-        return column
+        return column + 1
 
     # Calculate the number of 4-in-a-row each player has
     def countScore(self):

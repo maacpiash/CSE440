@@ -67,7 +67,9 @@ def interactiveGame(currentGame, whoisnext):
         print('Score: Player 1 = %d, Player 2 = %d\n' % (currentGame.player1Score, currentGame.player2Score))
         currentGame.printGameBoard()
         currentGame.printGameBoardToFile()
+    print("BOARD FULL\n\nGame Over!\n")
     currentGame.gameFile.close()
+    sys.exit(0)
 
 
 
