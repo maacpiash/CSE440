@@ -6,9 +6,12 @@
 
 import sys, math, random
 
-global_option = None
-global_threshold = 50
+global_option = None    # {"optimized", "randomized", "forest3", "forest15"}
+pruning_thr = 50        # Pruning Threshold
+attrList = []           # List of attributes
 
+
+""" Node class """
 class Node:
     # START OF NODE CLASS
     def __init__(self, treeID, nodeID, featID, threshold, infoGain):
@@ -23,25 +26,32 @@ class Node:
         # An homage to C# (^_^)
         q = []
         # Implementing basic DFS by a queue data structure
-        node = self
-        q.append(node)
-        while q.__len__() > 0: 
+        q.append(self)
+        while len(q) > 0: 
             node = q.pop()       
             print("tree=%2d, node=%3d, feature=%2d, thr=%6.2lf, gain=%lf" % (node.treeID, node.nodeID, node.featID, node.threshold, node.infoGain))
-            if isinstance(node.left, Node):
+            if type(node.left) is Node:
                 q.append(node.left)
-            if isinstance(node.right, Node):
+            else:
+                print(str(node.left))
+            if type(node.right) is Node:
                 q.append(node.right)
+            else:
+                print(str(node.right))
     # END OF NODE CLASS
 
+""" DTL functions """
+
+# Decision Tree Learning
 def DTL(examples, attributes, default, treeID, nodeID):
     print("DTL call: treeID = %2d, nodeID = %3d" % (treeID, nodeID))
-    if len(examples) <= global_threshold: # Not enough exapmles to consider
+    if len(examples) <= pruning_thr: # Not enough exapmles to consider
         print("Examples ran out.")
         return default
-    sameClass = homogeneous(examples) # Checks if all the examples have the same class
-    if sameClass != None:
-        return sameClass
+    if homogeneous(examples): # All the examples have the same class
+        print("Homogeneous examples.")
+        return examples[0][1]
+
     # Base cases completed
     if global_option == "optimized":
         best_attribute, best_threshold, max_gain = CHOOSE_ATTRIBUTE(examples, attributes)
@@ -50,12 +60,12 @@ def DTL(examples, attributes, default, treeID, nodeID):
     tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
     examples_left, examples_right = [], []
     for sample in examples:
-        if sample[1] < global_threshold:
+        if sample[1] < best_threshold:
             examples_left.append(sample)
         else:
             examples_right.append(sample)
-    tree.left = DTL(examples_left, attributes, DISTRIBUTION(examples), treeID, nodeID * 2) # if len(examples_left) <= global_threshold else DISTRIBUTION(examples_left)
-    tree.right = DTL(examples_right, attributes, DISTRIBUTION(examples), treeID, nodeID * 2 + 1) # if len(examples_right) <= global_threshold else DISTRIBUTION(examples_right)
+    tree.left = DTL(examples_left, attributes, DISTRIBUTION(examples), treeID, nodeID * 2) # if len(examples_left) <= pruning_thr else DISTRIBUTION(examples_left)
+    tree.right = DTL(examples_right, attributes, DISTRIBUTION(examples), treeID, nodeID * 2 + 1) # if len(examples_right) <= pruning_thr else DISTRIBUTION(examples_right)
     return tree
 
 def DISTRIBUTION(examples):
@@ -70,8 +80,8 @@ def homogeneous(examples):
     firstClass = examples[0][1]
     for sample in examples:
         if sample[1] != firstClass:
-            return None
-    return firstClass
+            return False
+    return True
 
 def CHOOSE_ATTRIBUTE(examples, attributes):
     max_gain = best_attribute = best_threshold = -1
@@ -112,8 +122,8 @@ def INFORMATION_GAIN(examples, attribute, threshold):
     leftCount, rightCount = 0, 0
     leftChildren, rightChildren = [0] * (numberOfClasses + 1), [0] * (numberOfClasses + 1)
     for sample in examples:
-        # sample[0][n] = value of n-th attribute of the sample
-        # sample[1] = the class that sample belongs to
+        # sample[0][n] = value of n-th attribute of the sample -> float
+        # sample[1] = the class that sample belongs to -> int
         if sample[0][attribute] < threshold:
             leftCount += 1
             leftChildren[sample[1]] += 1
@@ -125,8 +135,9 @@ def INFORMATION_GAIN(examples, attribute, threshold):
     return root_entropy - left_weight * left_entropy - right_weight * right_entropy
 
 def ENTROPY(numbers):
-    if numbers[0] == 0:
-        numbers.pop() # removed the first item, since there is no item with Class 0
+    # This function returns a float, H, which is the entropy of "numbers"
+    # "numbers" is a list of integers that represent how many items each class has
+    # i.e. "numbers[c] = f" means that "f number of samples is of class c"
     K = sum(numbers)
     H = 0
     for Ki in numbers:
@@ -136,6 +147,8 @@ def ENTROPY(numbers):
     return H
 
 def frequency(examples):
+    # This function returns a list of integers, which represent how many items in examples each class has
+    # i.e. "freq[c] = f" means that "f number of samples is of class c"
     freq = [0] * (numberOfClasses + 1)
     for sample in examples:
         freq[sample[1]] += 1
@@ -207,24 +220,19 @@ for oneExample in training_lines:
 # print(str(type(examples[0][0])))      #  => list       of float
 # print(str(type(examples[0][0][0])))   #  => float
 
-attrList = []
 for i in range(len(examples[0][0])):
     attrList.append(i)
-# print(attrList)
-# print(str(type(attrList)))
-    
-# print(attrList)
 numberOfClasses = len(getClasses(examples))
-# print("Number of classes = " + str(numberOfClasses))
 
-if global_option == "optimized":
+if global_option in {"optimized", "randomized"}:
     tree = DTL(examples, attrList, DISTRIBUTION(examples), 0, 1)
     tree.Console_WriteLine()
-    
-if global_option in {"forest3", "forest15"}:
+else:
     forest = [] # Array of trees
     numTrees = 3 if global_option == "forest3" else 15
     for i in range(numTrees):
         tree = DTL(examples, attrList, DISTRIBUTION(examples), i, 1)
         forest.append(tree)
+    for tree in forest:
+        tree.Console_WriteLine()
     
