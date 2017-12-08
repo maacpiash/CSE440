@@ -44,10 +44,14 @@ class Node:
 
 # Decision Tree Learning
 def DTL(examples, attributes, default, treeID, nodeID):
+    # returns a decision tree
     print("DTL call: treeID = %2d, nodeID = %3d" % (treeID, nodeID))
     if len(examples) <= pruning_thr: # Not enough exapmles to consider
         print("Examples ran out.")
-        return default.index(max(default))
+        if global_option == "optimized":
+            return default.index(max(default))
+        else:
+            return default
     if homogeneous(examples): # All the examples have the same class
         print("Homogeneous examples.")
         return examples[0][1]
@@ -57,12 +61,7 @@ def DTL(examples, attributes, default, treeID, nodeID):
     else:
         best_attribute, best_threshold, max_gain = RANDOM_ATTRIBUTE(examples, attributes)
     tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
-    examples_left, examples_right = [], []
-    for sample in examples:
-        if sample[0][best_attribute] < best_threshold:
-            examples_left.append(sample)
-        else:
-            examples_right.append(sample)
+    examples_left, examples_right = seperate(examples, best_attribute, best_threshold)
     newID = nodeID * 2
     tree.left_child = DTL(examples_left, attributes, DISTRIBUTION(examples), treeID, newID)
     tree.right_child = DTL(examples_right, attributes, DISTRIBUTION(examples), treeID, newID + 1)
@@ -79,6 +78,7 @@ def DISTRIBUTION(examples):
     return distribution
         
 def homogeneous(examples):
+    # returns true if each sample in examples is of the same class
     if len(examples) == 1:
         return True
     firstClass = examples[0][1]
@@ -88,6 +88,7 @@ def homogeneous(examples):
     return True
 
 def CHOOSE_ATTRIBUTE(examples, attributes):
+    # chooses the attribute and the threshold for it that give the best information gain
     max_gain = best_attribute = best_threshold = -1
     for a in attributes:
         attribute_values = SELECT_COLUMN(examples, a)
@@ -100,6 +101,7 @@ def CHOOSE_ATTRIBUTE(examples, attributes):
     return best_attribute, best_threshold, max_gain
 
 def RANDOM_ATTRIBUTE(examples, attributes):
+    # chooses a random attribute and the threshold for that give the best information gain
     max_gain = best_attribute = best_threshold = -1
     a = random.choice(attributes)
     attribute_values = SELECT_COLUMN(examples, a)
@@ -113,38 +115,37 @@ def RANDOM_ATTRIBUTE(examples, attributes):
     return best_attribute, best_threshold, max_gain
 
 def SELECT_COLUMN(examples, attribute):
-    # print(str(attribute) + " chosen")
+    # returns a list of values of the particular attribute among examples
     values = []
     for sample in examples:
-        # print("Sample's attr-array size = " + str(len(sample[0])))
         values.append(sample[0][attribute])
     return values
 
 def INFORMATION_GAIN(examples, attribute, threshold):
+    # returns the information gain of a node considering some examples,
+    # one of their attributes and a certain threshold for that attribute
     root_entropy = ENTROPY(frequency(examples))
     K = len(examples)
-    leftCount, rightCount = 0, 0
-    leftChildren, rightChildren = [0] * (numberOfClasses + 1), [0] * (numberOfClasses + 1)
-    for sample in examples:
-        # sample[0][n] = value of n-th attribute of the sample -> float
-        # sample[1] = the class that sample belongs to -> int
-        if sample[0][attribute] < threshold:
-            leftCount += 1
-            leftChildren[sample[1]] += 1
-        else:
-             rightCount += 1
-             rightChildren[sample[1]] += 1
-    left_weight, right_weight = float(float(leftCount) / float(K)), float(float(rightCount) / float(K))  
-    left_entropy, right_entropy = ENTROPY(leftChildren), ENTROPY(rightChildren)
+    leftChildren, rightChildren = seperate(examples, attribute, threshold)
+    left_weight, right_weight = len(leftChildren) / K, len(rightChildren) / K
+    left_entropy, right_entropy = ENTROPY(frequency(leftChildren)), ENTROPY(frequency(rightChildren))
     return root_entropy - left_weight * left_entropy - right_weight * right_entropy
+
+def seperate(examples, attribute, threshold):
+    # seperates the "examples" based on "attribute" by its "threshold"
+    lList, rList = [], []
+    for sample in examples:
+        if sample[0][attribute] < threshold:
+            lList.append(sample)
+        else:
+            rList.append(sample)
+    return lList, rList
 
 def ENTROPY(numbers):
     # returns a float, H, which is the entropy of "numbers"
     # "numbers" is a list of integers that represent how many items each class has
     # i.e. "numbers[c] = f" means that "f number of samples is of class c"
-    K = sum(numbers)
-    if K == 0:
-        
+    K = sum(numbers)        
     H = 0
     for Ki in numbers:
         ratio = Ki / K
@@ -154,7 +155,7 @@ def ENTROPY(numbers):
 
 def frequency(examples):
     # returns a list of integers, which represent how many items in examples each class has
-    # i.e. "freq[c] = f" means that "f number of samples is of class c"
+    # i.e. "freq[c] = f" means that "f number of sample(s) in examples is of class c"
     freq = [0] * (numberOfClasses + 1)
     for sample in examples:
         freq[sample[1]] += 1
