@@ -29,9 +29,22 @@ class Node:
         self.infoGain = infoGain
         self.left_child = self.right_child = None
 
+    def getValue(self, sample):
+        if sample.attributes[self.featID] < self.threshold:
+            if type(self.left_child) is Node:
+                return self.left_child.getValue(sample)
+            else:
+                return self.left_child
+        else:
+            if type(self.right_child) is Node:
+                return self.right_child.getValue(sample)
+            else:
+                return self.right_child
+
+
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-""" Print and File I/O functions definition"""
+""" Tree printing and File I/O functions' definition"""
     
 def Console_WriteLine(tree):
     # An homage to C#
@@ -50,6 +63,29 @@ def Console_WriteLine(tree):
         else:
            print("tree=%2d, node=%3d, feature=-1, thr=-1, gain=-1" % (tree.treeID, global_parent_nodeID * 2 + 1))
             
+def getSamplesFromFile(inputFile):
+    try:
+        with open(inputFile, 'r') as f:
+            lines = f.readlines() # took all the lines in a list of strings
+    except:
+        print("ERROR : File could not be opened.")
+        sys.exit()
+    sampleList = []
+    if lines[-1] != '\n':
+        # Adding a carraige return at the end of the last line, for convenience
+        lines[-1] = lines[-1] + '\n'
+    for oneExample in lines:
+        attributes = oneExample.split()
+        attrRow = []
+        for attr in attributes[:-1]:
+            attrRow.append(float(attr))
+        try:
+            cIass = int(oneExample[-2])
+        except:
+            cIass = int(oneExample[-3])
+        sampleList.append(Sample(attrRow, cIass))
+    return sampleList
+
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
@@ -179,38 +215,13 @@ examples = []
 training_lines, test_lines = [], []
 
 # File I/O
-try:
-    with open(training_file, 'r') as f:
-        training_lines = f.readlines() # took all the lines in a list of strings
-except:
-    print("ERROR : Training file could not be opened.")
-    sys.exit()
+examples = getSamplesFromFile(training_file)
+testers = getSamplesFromFile(test_file)
 
-try:
-    with open(test_file, 'r') as f:
-        test_lines = f.readlines() # took all the lines in a list of strings
-except:
-    print("ERROR : Test file could not be opened.")
-    sys.exit()
-
-if training_lines[-1] != '\n':
-    # Adding a carraige return at the end of the last line, for convenience
-    training_lines[-1] = training_lines[-1] + '\n'
-
-# Processing the lines read from the file as attributes and class
-
-for oneExample in training_lines:
-    attributes = oneExample.split()
-    attrRow = []
-    for attr in attributes[:-1]:
-        attrRow.append(float(attr))
-    try:
-        cIass = int(oneExample[-2])
-    except:
-        cIass = int(oneExample[-3])
-    if cIass not in global_classes_list:
-        global_classes_list.append(cIass)
-    examples.append(Sample(attrRow, cIass))
+for sample in examples:
+    c = sample.Class
+    if c not in global_classes_list:
+            global_classes_list.append(c)
 
 global_attribs_count = len(examples[0].attributes)
 global_classes_count = len(global_classes_list)
@@ -224,3 +235,28 @@ for i in range(global_trees_count):
     decision_tree = DTL(examples, DISTRIBUTION(examples), i, 1)
     global_forest.append(decision_tree)
     Console_WriteLine(decision_tree)
+
+t = 0
+
+for tree in global_forest:
+    print("\nClassification : Tree " + str(tree.treeID))
+    s, f = 0, 0
+    accuracy = []
+    for sample in testers:
+        vector = tree.getValue(sample)
+        try:
+            prediction = vector.index(max(vector))
+        except:
+            prediction = vector
+        if int(prediction) == int(sample.Class):
+            s += 1
+        else:
+            f += 1
+    pc = (s * 100) / (s + f)
+    print("Rate of success: %6.2lf per cent" % (pc))
+    t += pc
+
+n = len(global_forest)
+avg = t / n
+
+print("\nOverall percentage of success for %d tree(s): %6.2lf per cent" % (n, avg))
