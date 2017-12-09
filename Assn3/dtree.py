@@ -1,17 +1,25 @@
-# Md. Abdul Ahad Chowdhury
-# ID: 1410575042
-# CSE440.1, Fall 2017
-
-""" Attributes start from 0, but classes start from 1 """
-
 import sys, math, random
 
-global_option = None    # {"optimized", "randomized", "forest3", "forest15"}
-pruning_thr = 50        # Pruning Threshold
-attrList = []           # List of attributes
+pruning_thr = 50
+global_classes_count = 0
+global_attribs_count = 0
+global_option = None
+global_classes_list = []
+global_forest = []
+global_trees_count = 0
+global_parent_nodeID = 0
 
+""" Sample class definition """
 
-""" Node class """
+class Sample:
+    def __init__(self, attributes, Class):
+        self.attributes = attributes
+        self.Class = Class
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+""" Node class definition """
+
 class Node:
     # START OF NODE CLASS
     def __init__(self, treeID, nodeID, featID, threshold, infoGain):
@@ -21,160 +29,174 @@ class Node:
         self.threshold = threshold
         self.infoGain = infoGain
         self.left_child = self.right_child = None
-    
-    def Console_WriteLine(self):
-        # An homage to C# (^_^)
-        q = []
-        # Implementing basic DFS by a queue data structure
-        q.append(self)
-        while len(q) > 0: 
-            node = q.pop()       
-            print("tree=%2d, node=%3d, feature=%2d, thr=%6.2lf, gain=%lf" % (node.treeID, node.nodeID, node.featID, node.threshold, node.infoGain))
-            if type(node.left_child) is Node:
-                q.append(node.left_child)
-            else:
-                print(str(node.left_child))
-            if type(node.right_child) is Node:
-                q.append(node.right_child)
-            else:
-                print(str(node.right_child))
-    # END OF NODE CLASS
 
-""" DTL functions """
-
-# Decision Tree Learning
-def DTL(examples, attributes, default, treeID, nodeID):
-    # returns a decision tree
-    print("DTL call: treeID = %2d, nodeID = %3d" % (treeID, nodeID))
-    if len(examples) <= pruning_thr: # Not enough exapmles to consider
-        print("Examples ran out.")
-        if global_option == "optimized":
-            return default.index(max(default))
+    def getValue(self, sample):
+        if sample.attributes[self.featID] < self.threshold:
+            if type(self.left_child) is Node:
+                return self.left_child.getValue(sample)
+            else:
+                return self.left_child
         else:
-            return default
-    if homogeneous(examples): # All the examples have the same class
-        print("Homogeneous examples.")
-        return examples[0][1]
-    # Base cases completed
-    if global_option == "optimized":
-        best_attribute, best_threshold, max_gain = CHOOSE_ATTRIBUTE(examples, attributes)
+            if type(self.right_child) is Node:
+                return self.right_child.getValue(sample)
+            else:
+                return self.right_child
+
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+""" Tree printing and File I/O functions' definition """
+    
+def Console_WriteLine(tree):
+    # An homage to C#
+    q = []
+    q.append(tree)
+    while len(q) > 0: 
+        node = q.pop(0)       
+        print("tree=%2d, node=%3d, feature=%2d, thr=%6.2lf, gain=%lf" % (tree.treeID, node.nodeID, node.featID, node.threshold, node.infoGain))
+        global_parent_nodeID = node.nodeID
+        if type(node.left_child) is Node:
+            q.append(node.left_child)
+        else:
+            print("tree=%2d, node=%3d, feature=-1, thr=-1, gain=-1" % (tree.treeID, global_parent_nodeID * 2))
+        if type(node.right_child) is Node:
+            q.append(node.right_child)
+        else:
+           print("tree=%2d, node=%3d, feature=-1, thr=-1, gain=-1" % (tree.treeID, global_parent_nodeID * 2 + 1))
+            
+def getSamplesFromFile(inputFile):
+    try:
+        with open(inputFile, 'r') as f:
+            lines = f.readlines() # took all the lines in a list of strings
+    except:
+        print("ERROR : File could not be opened.")
+        sys.exit()
+    sampleList = []
+    if lines[-1] != '\n':
+        # Adding a carraige return at the end of the last line, for convenience
+        lines[-1] = lines[-1] + '\n'
+    for oneExample in lines:
+        attributes = oneExample.split()
+        attrRow = []
+        for attr in attributes[:-1]:
+            attrRow.append(float(attr))
+        try:
+            cIass = int(oneExample[-2])
+        except:
+            cIass = int(oneExample[-3])
+        sampleList.append(Sample(attrRow, cIass))
+    return sampleList
+
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+""" DTL functions' definition """
+
+def DTL(examples, default, treeID, nodeID): # OK
+    if len(examples) < pruning_thr:
+        return default
+    elif homogeneous(examples):
+        return examples[0].Class
     else:
-        best_attribute, best_threshold, max_gain = RANDOM_ATTRIBUTE(examples, attributes)
-    tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
-    examples_left, examples_right = seperate(examples, best_attribute, best_threshold)
-    newID = nodeID * 2
-    tree.left_child = DTL(examples_left, attributes, DISTRIBUTION(examples), treeID, newID)
-    tree.right_child = DTL(examples_right, attributes, DISTRIBUTION(examples), treeID, newID + 1)
-    return tree
+        if global_option == "optimized":
+            best_attribute, best_threshold, max_gain = CHOOSE_ATTRIBUTE(examples)
+        else:
+            best_attribute, best_threshold, max_gain = RANDOM_ATTRIBUTE(examples)
+        tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
+        examples_left, examples_right = seperate(examples, best_attribute, best_threshold)
+        tree.left_child = DTL(examples_left, DISTRIBUTION(examples), treeID, nodeID * 2)
+        tree.right_child = DTL(examples_right, DISTRIBUTION(examples), treeID, nodeID * 2 + 1)
+        return tree
 
-def DISTRIBUTION(examples):
-    # returns a probability vector according to examples
-    totalSamples = len(examples)
-    classList = getClasses(examples)
-    totalClasses = len(classList)
-    distribution = [float(0)] * (totalClasses + 1)
-    for sample in examples:
-        distribution[sample[1]] = ((distribution[sample[1]] * totalSamples) + 1) / totalSamples
-    return distribution
-        
-def homogeneous(examples):
-    # returns true if each sample in examples is of the same class
-    if len(examples) == 1:
-        return True
-    firstClass = examples[0][1]
-    for sample in examples:
-        if sample[1] != firstClass:
-            return False
-    return True
-
-def CHOOSE_ATTRIBUTE(examples, attributes):
-    # chooses the attribute and the threshold for it that give the best information gain
+def CHOOSE_ATTRIBUTE(examples): # OK
     max_gain = best_attribute = best_threshold = -1
-    for a in attributes:
-        attribute_values = SELECT_COLUMN(examples, a)
+    for A in range(global_attribs_count):
+        attribute_values = SELECT_COLUMN(examples, A)
         L, M = min(attribute_values), max(attribute_values)
         for K in range(1, 51):
             threshold = L + K * (M - L) / 51
-            gain = INFORMATION_GAIN(examples, a, threshold)
+            gain = INFORMATION_GAIN(examples, A, threshold)
             if gain > max_gain:
-                max_gain, best_attribute, best_threshold = gain, a, threshold
+                max_gain, best_attribute, best_threshold = gain, A, threshold
     return best_attribute, best_threshold, max_gain
 
-def RANDOM_ATTRIBUTE(examples, attributes):
-    # chooses a random attribute and the threshold for that give the best information gain
+def RANDOM_ATTRIBUTE(examples): # OK
     max_gain = best_attribute = best_threshold = -1
-    a = random.choice(attributes)
-    attribute_values = SELECT_COLUMN(examples, a)
-    L, M, K = min(attribute_values), max(attribute_values), 1
-    while K <= 50:
+    A = random.randint(0, global_attribs_count - 1)
+    attribute_values = SELECT_COLUMN(examples, A)
+    L, M = min(attribute_values), max(attribute_values)
+    for K in range(1, 51):
         threshold = L + K * (M - L) / 51
-        gain = INFORMATION_GAIN(examples, a, threshold)
+        gain = INFORMATION_GAIN(examples, A, threshold)
         if gain > max_gain:
-            max_gain, best_threshold = gain, threshold
-        K += 1
+            max_gain, best_attribute, best_threshold = gain, A, threshold
     return best_attribute, best_threshold, max_gain
 
-def SELECT_COLUMN(examples, attribute):
-    # returns a list of values of the particular attribute among examples
-    values = []
+def SELECT_COLUMN(examples, attribute): # OK
+    aList = []
     for sample in examples:
-        values.append(sample[0][attribute])
-    return values
+        aList.append(sample.attributes[attribute])
+    return aList
 
-def INFORMATION_GAIN(examples, attribute, threshold):
-    # returns the information gain of a node considering some examples,
-    # one of their attributes and a certain threshold for that attribute
-    root_entropy = ENTROPY(frequency(examples))
-    K = len(examples)
-    leftChildren, rightChildren = seperate(examples, attribute, threshold)
-    left_weight, right_weight = len(leftChildren) / K, len(rightChildren) / K
-    left_entropy, right_entropy = ENTROPY(frequency(leftChildren)), ENTROPY(frequency(rightChildren))
-    return root_entropy - left_weight * left_entropy - right_weight * right_entropy
+def INFORMATION_GAIN(examples, attribute, threshold): # OK
+    lhs, rhs = seperate(examples, attribute, threshold)
+    K1, K2 = len(lhs), len(rhs)
+    K = K1 + K2
+    r1, r2 = K1 / K, K2 / K
+    H = ENTROPY(frequency(examples).values())
+    H1, H2 = ENTROPY(frequency(lhs).values()), ENTROPY(frequency(rhs).values())
+    return H - r1 * H1 - r2 * H2
 
-def seperate(examples, attribute, threshold):
-    # seperates the "examples" based on "attribute" by its "threshold"
-    lList, rList = [], []
-    for sample in examples:
-        if sample[0][attribute] < threshold:
-            lList.append(sample)
-        else:
-            rList.append(sample)
-    return lList, rList
-
-def ENTROPY(numbers):
-    # returns a float, H, which is the entropy of "numbers"
-    # "numbers" is a list of integers that represent how many items each class has
-    # i.e. "numbers[c] = f" means that "f number of samples is of class c"
-    K = sum(numbers)        
+def ENTROPY(frequency): # OK
+    K = sum(frequency)
     H = 0
-    for Ki in numbers:
-        ratio = Ki / K
-        if int(ratio) != 0:
-            H -= ratio * math.log2(ratio)
+    for x in frequency:
+        try:
+            r = x / K
+            H -= r * math.log2(r)
+        except:
+            H -= 0
     return H
 
-def frequency(examples):
-    # returns a list of integers, which represent how many items in examples each class has
-    # i.e. "freq[c] = f" means that "f number of sample(s) in examples is of class c"
-    freq = [0] * (numberOfClasses + 1)
+def DISTRIBUTION(examples): # OK
+    f = frequency(examples)
+    d = []
+    n = sum(f)
+    for x in f:
+        d.append(x / n)
+    return d
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+""" Helper functions' definition """
+
+def homogeneous(examples): # OK
+    firstClass = examples[0].Class
     for sample in examples:
-        freq[sample[1]] += 1
-    return freq
+        if sample.Class != firstClass:
+            return False
+    return True
 
-def getClasses(examples):
-    # returns a list of classes
-    classList = []
+def seperate(examples, attribute, threshold): # OK
+    l, r = [], []
     for sample in examples:
-        i = sample[1]
-        if i not in classList:
-            classList.append(i)
-    return classList
+        if sample.attributes[attribute] < threshold:
+            l.append(sample)
+        else:
+            r.append(sample)
+    return l, r
 
+def frequency(examples): # OK
+    frequency = dict.fromkeys(global_classes_list)
+    for c in global_classes_list:
+        frequency[c] = 0
+    for sample in examples:
+        frequency[sample.Class] += 1
+    return frequency
 
-"""
-    ##### The procedure of the program starts here #####
-"""
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
+""" Programm process """
 
 try:
     training_file, test_file, global_option = sys.argv[1:4]
@@ -194,52 +216,63 @@ examples = []
 training_lines, test_lines = [], []
 
 # File I/O
-try:
-    with open(training_file, 'r') as f:
-        training_lines = f.readlines() # took all the lines in a list of strings
-except:
-    print("ERROR : Training file could not be opened.")
-    sys.exit()
+examples = getSamplesFromFile(training_file)
+testers = getSamplesFromFile(test_file)
 
-try:
-    with open(test_file, 'r') as f:
-        test_lines = f.readlines() # took all the lines in a list of strings
-except:
-    print("ERROR : Test file could not be opened.")
-    sys.exit()
+for sample in examples:
+    c = sample.Class
+    if c not in global_classes_list:
+            global_classes_list.append(c)
 
-if training_lines[-1] != '\n':
-    # Adding a carraige return at the end of the last line, for convenience
-    training_lines[-1] = training_lines[-1] + '\n'
-
-# Processing the lines read from the file as attributes and class
-for oneExample in training_lines:
-    attributes = oneExample.split()
-    attrRow = []
-    for attr in attributes[:-1]:
-        attrRow.append(float(attr))
-    cIass = int(oneExample[-2])
-    tupl = (attrRow, cIass)
-    # Each example data is saved as a tuple in (attribute_array, class) format
-    examples.append(tupl)
-
-# print(str(type(examples)))            #  => list       of tuples    
-# print(str(type(examples[0])))         #  => tuple      of (list_of_float, int)
-# print(str(type(examples[0][0])))      #  => list       of float
-# print(str(type(examples[0][0][0])))   #  => float
-
-for i in range(len(examples[0][0])):
-    attrList.append(i)
-numberOfClasses = len(getClasses(examples))
+global_attribs_count = len(examples[0].attributes)
+global_classes_count = len(global_classes_list)
 
 if global_option in {"optimized", "randomized"}:
-    tree = DTL(examples, attrList, DISTRIBUTION(examples), 0, 1)
-    tree.Console_WriteLine()
+    global_trees_count = 1
 else:
-    forest = [] # Array of trees
-    numTrees = 3 if global_option == "forest3" else 15
-    for i in range(numTrees):
-        tree = DTL(examples, attrList, DISTRIBUTION(examples), i, 1)
-        forest.append(tree)
-    for tree in forest:
-        tree.Console_WriteLine()
+    global_trees_count = 3 if global_option == "forest3" else 15
+
+# print(global_classes_list)
+
+for i in range(global_trees_count):
+    decision_tree = DTL(examples, DISTRIBUTION(examples), i, 1)
+    global_forest.append(decision_tree)
+    Console_WriteLine(decision_tree)
+
+accuracy_list = []
+ac_pc = []
+n = len(global_forest)
+object_id = 0
+total = 0
+
+for tree in global_forest:
+    print("\nClassification : Tree " + str(tree.treeID))
+    accuracy = 0
+    for sample in testers:
+        vector = tree.getValue(sample)
+        try:
+            m = max(vector)
+            prediction = vector.index(m)
+            count = 0
+            for value in vector:
+                if value == m:
+                    count += 1
+            accuracy = 1 / count
+        except:
+            prediction = vector
+            # in case of homogeneous examples, DTL returns integer
+            accuracy = 1
+        if int(prediction) != int(sample.Class):
+            accuracy = 0
+        print("ID=%5d, predicted=%3d, true=%3d, accuracy=%4.2lf" % (object_id, prediction, sample.Class, accuracy))
+        object_id += 1
+        accuracy_list.append(accuracy)
+    pc = sum(accuracy_list) * 100.0 / len(accuracy_list)
+    ac_pc.append(pc)
+print()
+for i in range(n):
+    print("Rate of success for Tree %2d : %3.2lf per cent" % (i, ac_pc[i]))
+total = sum(ac_pc)
+avg = total / n
+
+print("\nOverall rate of success for %d tree(s): %6.2lf per cent" % (n, avg))
