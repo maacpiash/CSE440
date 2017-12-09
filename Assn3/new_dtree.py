@@ -1,5 +1,4 @@
 import sys, math, random
-from collections import deque
 
 pruning_thr = 50
 global_classes_count = 0
@@ -8,7 +7,6 @@ global_option = None
 global_classes_list = []
 global_forest = []
 global_trees_count = 0
-global_parent_treeID = 0
 global_parent_nodeID = 0
 
 """ Sample class definition"""
@@ -30,57 +28,48 @@ class Node:
         self.threshold = threshold
         self.infoGain = infoGain
         self.left_child = self.right_child = None
+
+### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
+
+""" Print and File I/O functions definition"""
     
-    def Console_WriteLine(self):
-        q = deque()
-        q.append(self)
-        while len(q) > 0: 
-            node = q.popleft()       
-            #print("tree=%2d, node=%3d, feature=%2d, thr=%6.2lf, gain=%lf" % (node.treeID, node.nodeID, node.featID, node.threshold, node.infoGain))
-            global_parent_nodeID = node.nodeID
-            if type(node.left_child) is Node:
-                q.append(node.left_child)
-            else:   # Child is a leaf node, a distribution vector
-                leaf = node.left_child
-                try:
-                    leaf_value = leaf.index(max(leaf))
-                except:
-                    leaf_value = leaf
-                print("tree=%2d, node=%3d, feature=-1, thr=-1, leaf_value=%2d" % (global_parent_treeID, global_parent_nodeID * 2, leaf_value))
-            if type(node.right_child) is Node:
-                q.append(node.right_child)
-            else:   # Child is a leaf node, a distribution vector
-                leaf = node.right_child
-                try:
-                    leaf_value = leaf.index(max(leaf))
-                except:
-                    leaf_value = leaf
-                print("tree=%2d, node=%3d, feature=-1, thr=-1, leaf_value=%2d" % (global_parent_treeID, global_parent_nodeID * 2 + 1, leaf_value))
+def Console_WriteLine(tree):
+    # An homage to C#
+    q = []
+    q.append(tree)
+    while len(q) > 0: 
+        node = q.pop(0)       
+        print("tree=%2d, node=%3d, feature=%2d, thr=%6.2lf, gain=%lf" % (tree.treeID, node.nodeID, node.featID, node.threshold, node.infoGain))
+        global_parent_nodeID = node.nodeID
+        if type(node.left_child) is Node:
+            q.append(node.left_child)
+        else:
+            print("tree=%2d, node=%3d, feature=-1, thr=-1, gain=-1" % (tree.treeID, global_parent_nodeID * 2))
+        if type(node.right_child) is Node:
+            q.append(node.right_child)
+        else:
+           print("tree=%2d, node=%3d, feature=-1, thr=-1, gain=-1" % (tree.treeID, global_parent_nodeID * 2 + 1))
+            
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
 """ DTL functions definition"""
 
-def DTL(examples, default, treeID, nodeID):
-    # print("DTL call: treeID = %2d, nodeID = %3d" % (treeID, nodeID))
-    print("LENGTH: " + str(len(examples)))
+def DTL(examples, default, treeID, nodeID): # OK
     if len(examples) < pruning_thr:
-        # print("Leaf node")
-        # for i in default:
-        #     print(str(i))
-        print("class with highest probability = " + str(default.index(max(default))))
         return default
-    if homogeneous(examples):
+    elif homogeneous(examples):
         return examples[0].Class
-    if global_option == "optimized":
-        best_attribute, best_threshold, max_gain = CHOOSE_ATTRIBUTE(examples)
     else:
-        best_attribute, best_threshold, max_gain = RANDOM_ATTRIBUTE(examples)
-    tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
-    examples_left, examples_right = seperate(examples, best_attribute, best_threshold)
-    tree.left_child = DTL(examples_left, DISTRIBUTION(examples), treeID, nodeID * 2)
-    tree.right_child = DTL(examples_right, DISTRIBUTION(examples), treeID, nodeID * 2 + 1)
-    return tree
+        if global_option == "optimized":
+            best_attribute, best_threshold, max_gain = CHOOSE_ATTRIBUTE(examples)
+        else:
+            best_attribute, best_threshold, max_gain = RANDOM_ATTRIBUTE(examples)
+        tree = Node(treeID, nodeID, best_attribute, best_threshold, max_gain)
+        examples_left, examples_right = seperate(examples, best_attribute, best_threshold)
+        tree.left_child = DTL(examples_left, DISTRIBUTION(examples), treeID, nodeID * 2)
+        tree.right_child = DTL(examples_right, DISTRIBUTION(examples), treeID, nodeID * 2 + 1)
+        return tree
 
 def CHOOSE_ATTRIBUTE(examples): # OK
     max_gain = best_attribute = best_threshold = -1
@@ -234,8 +223,4 @@ else:
 for i in range(global_trees_count):
     decision_tree = DTL(examples, DISTRIBUTION(examples), i, 1)
     global_forest.append(decision_tree)
-    global_parent_treeID = i
-
-for tree in global_forest:
-    if type(tree) is Node:
-        tree.Console_WriteLine()
+    Console_WriteLine(decision_tree)
