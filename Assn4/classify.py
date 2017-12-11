@@ -147,28 +147,18 @@ for test_sample in global_testing_examples:
         failure += 1
     else:
         success += 1
-    # print("ID=%5d, predicted=%3d, true=%3d, accuracy=%4.2lf" % (object_id, predicted_class, true_class, accuracy))
+    print("ID=%5d, predicted=%3d, true=%3d, accuracy=%4.2lf" % (object_id, predicted_class, true_class, accuracy))
     score.append(accuracy)
     object_id += 1
 
-print("K = " + str(global_k))
-s = None
-if(training_file == "satellite_training.txt"):
-    s = "Satellite"
-elif(training_file == "yeast_training.txt"):
-    s = "Yeast"
-else:
-    s = "Pendigits"
-
-print(s + " dataset : Accuracy (calculating for ties) = %4.2lf%%" % (statistics.mean(score) * 100))
-print(" ")
+# print("K = %2d : Accuracy = %3.2lf%%" % (global_k, statistics.mean(score) * 100))
 
 
-"""
 print("+-------------------------------------------------------+")
+print("| Result after considering %2d Nearest Neighbors:\t|" % (global_k))
 print("| Total number of objects: " + str(success + failure) + "\t\t\t\t|")
-print("| Occurences of success (including ties): " + str(success) + "\t\t|")
+print("| Occurences of success (considering tie = 1.0): " + str(success) + "\t|")
 print("| Occurences of failure: " + str(failure) + "\t\t\t\t|")
-print("| Average accuracy (calculating for ties) = %4.2lf%%" % (statistics.mean(score) * 100) + "\t|")
+print("| Average accuracy (assuming tie = 1.0) = %4.2lf %%" % (success / (success + failure) * 100) + "\t|")
+print("| Average accuracy (calculating for ties) = %4.2lf %%" % (statistics.mean(score) * 100) + "\t|")
 print("+-------------------------------------------------------+")
-"""
