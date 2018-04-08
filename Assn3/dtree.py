@@ -9,7 +9,7 @@ global_forest = []
 global_trees_count = 0
 global_parent_nodeID = 0
 
-""" Sample class definition """
+""" 'Sample' class definition """
 
 class Sample:
     def __init__(self, attributes, Class):
@@ -18,7 +18,7 @@ class Sample:
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
-""" Node class definition """
+""" 'Node' class definition """
 
 class Node:
     # START OF NODE CLASS
@@ -41,7 +41,6 @@ class Node:
                 return self.right_child.getValue(sample)
             else:
                 return self.right_child
-
 
 ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ### ###
 
