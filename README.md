@@ -1,4 +1,5 @@
 # CSE440
 CSE440 is an introductory course on Artificial Intelligence, which was offered by [Mirza Mohammad Lutfe Elahi sir](http://ece.northsouth.edu/people/lutfe-elahi/) during Fall 2017 semester at North South University, Dhaka, Bangladesh.<br/><br/>
 This repository contains the assignments that were completed during this course.<br/><br/>
-**Note:** All programs were written in Python 3.6.2
+**Note:** All programs were written in Python 3.6.2<br/>
+For C++ implementations of these assignments, you can visit my friend Anirudha Paul's [repository](https://github.com/anirudha-ani/Artificial-Intelligence) that contains his assignments for the same course, under the same faculty member, completed earlier; except instead of KNN, they did Wumpus World in his class. <br/> You can also take a look at my [AIML](https://github.com/maacpiash/AIML) library where I implemented some of these algorithms in C++ in a generalized form using templates.
